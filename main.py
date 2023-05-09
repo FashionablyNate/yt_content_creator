@@ -15,14 +15,27 @@ reddit = praw.Reddit(
     user_agent = user_agent
 )
 
-# Get a random subreddit
-random_subreddit = reddit.random_subreddit( nsfw=False )
+# Get to the AskReddit subreddit
+subreddit = reddit.subreddit( 'AskReddit' )
 
-# Fetch random posts from the subreddit
-random_posts = random_subreddit.random_rising( limit=10 )
+# Fetch top posts from the subreddit
+top_posts = subreddit.top( time_filter='all', limit=10 )
 
 # Process the posts
-for post in random_posts:
-    print( post.title )
-    print( post.url )
-    print( '---' )
+for post in top_posts:
+    print("Title:", post.title)
+    print("Content:", post.selftext)  # Retrieve the content of the post
+    print("URL:", post.url)
+    print("---")
+
+    # Fetch top comments of the post
+
+    post.comment_sort = 'top'
+    post.comment_limit = 5
+    post.comments.replace_more(limit=0)
+
+    # Process the top comments
+    for comment in post.comments.list():
+        print("Comment:", comment.body)  # Retrieve the content of the comment
+        print("Score:", comment.score)
+        print("---")
