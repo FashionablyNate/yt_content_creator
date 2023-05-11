@@ -7,6 +7,7 @@ import os, random
 from moviepy.editor import VideoFileClip, ImageClip, AudioFileClip, CompositeVideoClip, concatenate_audioclips, concatenate_videoclips, vfx
 from moviepy.decorators import requires_duration
 from normalize import normalize_text
+import knapsack
 
 # Function to convert text to mp3 using TTS
 def text_to_mp3(text, output_file):
@@ -89,21 +90,14 @@ def create_video_clips(audio_durations, post, input_clip, start_time, cropped_cl
         cropped_clip = segment_clip.crop(x1=padding_left, x2=padding_left + target_width, y1=0, y2=target_height)
         # Get the corresponding image for this segment
         image = get_image(i, post, duration, input_clip, phone_aspect_ratio)
-        video_clips += create_clip_with_effect(i, cropped_clip, image, duration, post)
+        video_clips += create_clip(cropped_clip, image, duration)
         prev_duration += duration
     return video_clips
 
 # Function to get the image for a particular segment
 def get_image(i, post, duration, input_clip, phone_aspect_ratio):
     
-    if os.path.exists( os.path.join("posts", post.id, "audio", "clip_0_body.mp3") ):
-        # Determine the path of the image based on the current segment
-        if i < 2:
-            image_path = os.path.join("posts", post.id, "images", "reddit_image_0.png")
-        else:
-            image_path = os.path.join("posts", post.id, "images", f"reddit_image_{i - 1}.png")
-    else:
-        image_path = os.path.join("posts", post.id, "images", f"reddit_image_{i}.png")
+    image_path = os.path.join("posts", post.id, "images", f"image_{i}.png")
 
     # Load the image and set its duration
     image = ImageClip(image_path, duration=duration)
@@ -111,35 +105,8 @@ def get_image(i, post, duration, input_clip, phone_aspect_ratio):
     image = image.resize(width=input_clip.size[1] * phone_aspect_ratio - 100)
     return image
 
-# Function to apply the necessary effect to each video clip depending on its position in the sequence
-def create_clip_with_effect(i, cropped_clip, image, duration, post):
-
-    if os.path.exists( os.path.join("posts", post.id, "audio", "clip_0_body.mp3") ):
-        if i == 0:
-            return create_first_clip(cropped_clip, image, duration)
-        elif i == 1:
-            return create_second_clip(cropped_clip, image, duration)
-        else:
-            return create_subsequent_clips(cropped_clip, image, duration)
-    else:
-        return create_subsequent_clips(cropped_clip, image, duration)
-
-# Function to create the first video clip (fades in and slides in from the center)
-def create_first_clip(cropped_clip, image, duration):
-    image = image.crossfadein(0.5)
-    image = slide_in_center(image, duration=0.5, clip_size=cropped_clip.size)
-    output_clip = CompositeVideoClip([cropped_clip, image])
-    return [output_clip]
-
-# Function to create the second video clip (fades out and slides out to the center)
-def create_second_clip(cropped_clip, image, duration):
-    image = image.crossfadeout(0.5)
-    image = slide_out_center(image, duration=0.5, clip_size=cropped_clip.size)
-    output_clip = CompositeVideoClip([cropped_clip, image])
-    return [output_clip]
-
 # Function to create subsequent video clips (both fades in and out and slides in and out from the center)
-def create_subsequent_clips(cropped_clip, image, duration):
+def create_clip(cropped_clip, image, duration):
     video_clips = []
     cropped_clip1 = cropped_clip.subclip(0, duration / 2)
     cropped_clip2 = cropped_clip.subclip(duration / 2, duration)
@@ -166,42 +133,112 @@ def calculate_bitrate(height):
     else:
         return "8M"
 
-# generates audio from reddit post and comments
 def generate_audio(post, comments):
+    
     audio_dir = os.path.join("posts", post.id, "audio")
     images_dir = os.path.join("posts", post.id, "images")
-    text_to_mp3( post.title, os.path.join(audio_dir, "clip_0_title") )
+
+    if not os.path.exists( os.path.join( audio_dir, "clip_0_title.mp3" ) ):
+        text_to_mp3( post.title, os.path.join( audio_dir, "clip_0_title" ) )
     if not ( post.selftext == "" ):
-        text_to_mp3( post.selftext, os.path.join(audio_dir, "clip_0_body") )
-        audio_clips = [AudioFileClip(os.path.join(audio_dir, "clip_0_title.mp3")), AudioFileClip(os.path.join(audio_dir, "clip_0_body.mp3"))]
-        total_duration = audio_clips[0].duration + audio_clips[1].duration
+        if not os.path.exists( os.path.join( audio_dir, "clip_0_body.mp3" ) ):
+            text_to_mp3( post.selftext, os.path.join(audio_dir, "clip_0_body") )
+        audio_clips = [concatenate_audioclips([AudioFileClip(os.path.join(audio_dir, "clip_0_title.mp3")), AudioFileClip(os.path.join(audio_dir, "clip_0_body.mp3"))])]
     else:
         audio_clips = [AudioFileClip(os.path.join(audio_dir, "clip_0_title.mp3"))]
-        total_duration = audio_clips[0].duration
-    max_duration = 60
+    total_duration = audio_clips[0].duration
 
-    i = 1
-    for comment in comments:
-        temp_filename = f"clip_{i}"
-        text_to_mp3(comment.body, os.path.join(audio_dir, temp_filename))
+    for i, comment in enumerate( comments ):
+        temp_filename = f"clip_{i + 1}"
+        if not os.path.exists( os.path.join( audio_dir, temp_filename + ".mp3" ) ):
+            text_to_mp3(comment.body, os.path.join(audio_dir, temp_filename))
 
         temp_audio_clip = AudioFileClip( os.path.join(audio_dir, temp_filename + ".mp3") )
-        if total_duration + temp_audio_clip.duration <= max_duration:
-            audio_clips.append( temp_audio_clip )
-            total_duration += temp_audio_clip.duration
-            i += 1
-        else:
-            os.remove( os.path.join(audio_dir, temp_filename + ".mp3") )
-            os.remove( os.path.join(images_dir, f"reddit_image_{i}.png") )
+        audio_clips.append( temp_audio_clip )
+        total_duration += temp_audio_clip.duration
 
-            # Renumber the following images
-            j = i
-            while os.path.exists(os.path.join(images_dir, f"reddit_image_{j+1}.png")):
-                os.rename(os.path.join(images_dir, f"reddit_image_{j+1}.png"), os.path.join(images_dir, f"reddit_image_{j}.png"))
-                j += 1
+    _, indices = knapsack.knapsack( [clip.duration for clip in audio_clips[1:]], [comment.ups for comment in comments] ).solve( 60 - audio_clips[0].duration )
+    indices = list( map( lambda x: x + 1 , indices ) )
+    manage_files( audio_dir, indices )
+    manage_files( images_dir, indices )
 
-    final_audio = concatenate_audioclips(audio_clips)
+    return concatenate_audioclips([audio_clips[0]] + [element for index, element in enumerate(audio_clips) if index in indices]), \
+                                  [audio_clips[0].duration] + [element.duration for index, element in enumerate(audio_clips) if index in indices]
 
-    audio_durations = [clip.duration for clip in audio_clips]
+# Function to delete and renumber files
+def manage_files(dir_path, indices):
+    # Get the list of all files in directory
+    files = os.listdir(dir_path)
+    
+    if "clip_0_body.mp3" in files:
+        files.remove("clip_0_body.mp3")
+    if "clip_0_title.mp3" in files:
+        files.remove("clip_0_title.mp3")
+    if "image_0.png" in files:
+        files.remove("image_0.png")
 
-    return final_audio, audio_durations
+    files.sort(key=lambda x: int(x.split('_')[1].split('.')[0]))
+
+    # Keep the files with corresponding indices and delete the others
+    for file in files:
+        # Get index from filename
+        index = int(file.split('_')[1].split('.')[0])
+        
+        if index not in indices:
+            os.remove( os.path.join( dir_path, file ) )
+    
+    files = os.listdir(dir_path)
+    if "clip_0_body.mp3" in files:
+        files.remove("clip_0_body.mp3")
+    if "clip_0_title.mp3" in files:
+        files.remove("clip_0_title.mp3")
+    if "image_0.png" in files:
+        files.remove("image_0.png")
+    files.sort(key=lambda x: int(x.split('_')[1].split('.')[0]))
+    
+    for i, file in enumerate(files):
+        os.rename( os.path.join( dir_path, file ), os.path.join( dir_path, file.split('_')[0] + '_' + str(i + 1) + '.' + file.split('.')[1] ) )
+    
+
+# generates audio from reddit post and comments
+# def generate_audio(post, comments):
+#     audio_dir = os.path.join("posts", post.id, "audio")
+#     images_dir = os.path.join("posts", post.id, "images")
+#     if not os.path.exists( os.path.join( audio_dir, "clip_0_title.mp3" ) ):
+#         text_to_mp3( post.title, os.path.join( audio_dir, "clip_0_title" ) )
+#     if not ( post.selftext == "" ):
+#         if not os.path.exists( os.path.join( audio_dir, "clip_0_body.mp3" ) ):
+#             text_to_mp3( post.selftext, os.path.join(audio_dir, "clip_0_body") )
+#         audio_clips = [concatenate_audioclips([AudioFileClip(os.path.join(audio_dir, "clip_0_title.mp3")), AudioFileClip(os.path.join(audio_dir, "clip_0_body.mp3"))])]
+#     else:
+#         audio_clips = [AudioFileClip(os.path.join(audio_dir, "clip_0_title.mp3"))]
+#     total_duration = audio_clips[0].duration
+#     max_duration = 60
+
+#     i = 1
+#     for comment in comments:
+#         temp_filename = f"clip_{i}"
+#         if not os.path.exists( os.path.join( audio_dir, temp_filename + ".mp3" ) ):
+#             text_to_mp3(comment.body, os.path.join(audio_dir, temp_filename))
+
+#         temp_audio_clip = AudioFileClip( os.path.join(audio_dir, temp_filename + ".mp3") )
+#         if total_duration + temp_audio_clip.duration <= max_duration:
+#             audio_clips.append( temp_audio_clip )
+#             total_duration += temp_audio_clip.duration
+#             i += 1
+#         else:
+#             os.remove( os.path.join(audio_dir, temp_filename + ".mp3") )
+#             os.remove( os.path.join(images_dir, f"image_{i}.png") )
+
+#             # Renumber the following images
+#             j = i
+#             while os.path.exists(os.path.join(images_dir, f"image_{j+1}.png")):
+#                 os.rename(os.path.join(images_dir, f"image_{j+1}.png"), os.path.join(images_dir, f"image_{j}.png"))
+#                 j += 1
+
+#     final_audio = concatenate_audioclips(audio_clips)
+
+#     audio_durations = [clip.duration for clip in audio_clips]
+
+#     return final_audio, audio_durations
+

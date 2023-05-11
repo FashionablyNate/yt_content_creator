@@ -48,8 +48,8 @@ if not os.path.exists( "posts/" + post.id + "/audio" ):
 comments = get_comments( post )
 asyncio.run( take_screenshot( post, comments ) )
 for i in range( 0, len( comments ) + 1):
-    im = Image.open( f'posts/{post.id}/images/reddit_image_{i}.png' )
+    im = Image.open( f'posts/{post.id}/images/image_{i}.png' )
     im = add_corners( im, 30 )
     im = change_transparency( im, 0.85 )
-    im.save( f'posts/{post.id}/images/reddit_image_{i}.png' )
+    im.save( f'posts/{post.id}/images/image_{i}.png' )
 create_video( post, comments )

@@ -1,5 +1,6 @@
 import re
 from num2words import num2words
+from better_profanity import profanity
 
 def expand_contractions(text):
     contractions = {
@@ -123,6 +124,8 @@ def expand_contractions(text):
         "bc": "because",
         "wasn't": "was not",
         "we're": "we are",
+        "sex": "intercourse",
+        "cum": "sauce",
     }
     for contraction, expansion in contractions.items():
         text = text.replace(contraction, expansion)
@@ -133,6 +136,7 @@ def normalize_numbers(text):
     text = re.sub(r"\$(\d+)B", r"\1 billion dollars", text)
     text = re.sub(r"\$(\d+)T", r"\1 trillion dollars", text)
     text = re.sub(r"\$(\d+)", r"\1 dollars", text)
+    text = re.sub(r'\$(\d+)\+', ' plus', text)
     text = re.sub(r'(\d+)-(\d+)', r'\1 to \2', text)
     return re.sub(r'\d+', lambda x: num2words(int(x.group(0))), text)
 
@@ -148,10 +152,15 @@ def normalize_punctuation(text):
     return text
 
 def normalize_text(text):
+    profanity.load_censor_words()
     text = expand_contractions(text)
     text = normalize_numbers(text)
+    text = profanity.censor( text, "" )
     text = normalize_punctuation(text)
     text = re.sub(r'\b(i)\b', 'I', text)
     return text
+
+# text = "I believe it's bc teens are unassuming and don't know how to shutdown creepy men. It's very predatory. In my younger years, I was stalked in...I still get on as someone in thier 30s but it's very \"normal\" fuck, and sex too you piece of shit cum"
+# print( normalize_text( text ) )
 
 # print( normalize_text( "Bernie Sanders Says US Should Confiscate 100% Of Any Money Americans Make Above $999M: 'They Can Survive Just Fine' - what do you think ?" ) )

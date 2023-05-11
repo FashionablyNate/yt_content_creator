@@ -32,7 +32,7 @@ def get_comments(post):
     post.comments.replace_more(limit=0)
 
     # Filter comments with length <= 1000 characters
-    filtered_comments = [comment for comment in post.comments.list() if len(comment.body) <= 1100]
+    filtered_comments = [comment for comment in post.comments.list()]
 
     # Get the top 10 comments
     top_comments = filtered_comments[:10]

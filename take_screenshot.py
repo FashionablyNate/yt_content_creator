@@ -1,5 +1,6 @@
 import os
 from playwright.async_api import async_playwright
+from better_profanity import profanity
 
 # Define an asynchronous function to take screenshots of a Reddit post and its comments
 async def take_screenshot( post, comments ):
@@ -22,9 +23,21 @@ async def take_screenshot( post, comments ):
         # Get the target post using the provided selector
         target_post = await page.query_selector( "shreddit-post" )
 
+        # Get the inner HTML of an element
+        title_html = await page.eval_on_selector("#post-title-t3_13b0vaf", 'element => element.innerHTML')
+        body_html = await page.eval_on_selector("#t3_13b0vaf-post-rtjson-content", 'element => element.innerHTML')
+
+        profanity.load_censor_words()
+        title_html = profanity.censor( title_html )
+        body_html = profanity.censor( body_html )
+
+        # Set the inner HTML of the element to the processed HTML
+        await page.eval_on_selector("#post-title-t3_13b0vaf", '(element, html) => element.innerHTML = html', title_html)
+        await page.eval_on_selector("#t3_13b0vaf-post-rtjson-content", '(element, html) => element.innerHTML = html', body_html)
+
         # Take a screenshot of the specific post
         if target_post:
-            await target_post.screenshot( path=f'posts/{post.id}/images/reddit_image_{i}.png' )
+            await target_post.screenshot( path=f'posts/{post.id}/images/image_{i}.png' )
             i += 1
         else:
             print( f"No element found for selector: shreddit-post" )
@@ -52,10 +65,19 @@ async def take_screenshot( post, comments ):
             except Exception as e:
                 print( f"Error waiting for comment: {e}" )
 
+            # Get the inner HTML of an element
+            original_html = await page.eval_on_selector("#-post-rtjson-content", 'element => element.innerHTML')
+
+            profanity.load_censor_words()
+            new_html = profanity.censor( original_html )
+
+            # Set the inner HTML of the element to the processed HTML
+            await page.eval_on_selector("#-post-rtjson-content", '(element, html) => element.innerHTML = html', new_html)
+
             # Take a screenshot of the specific comment
             target_comment = await page.query_selector( "shreddit-comment" )
             if target_comment:
-                screenshot_path = f'posts/{post.id}/images/reddit_image_{i}.png'
+                screenshot_path = f'posts/{post.id}/images/image_{i}.png'
                 i += 1
                 await page.screenshot( path=screenshot_path, clip=await target_comment.bounding_box() )
                 print( f'Screenshot saved: { os.path.abspath( screenshot_path ) }' )
