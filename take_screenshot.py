@@ -24,7 +24,7 @@ async def take_screenshot( post, comments ):
 
         # Take a screenshot of the specific post
         if target_post:
-            await target_post.screenshot( path=f'reddit_image_{i}.png' )
+            await target_post.screenshot( path=f'posts/{post.id}/images/reddit_image_{i}.png' )
             i += 1
         else:
             print( f"No element found for selector: shreddit-post" )
@@ -55,7 +55,7 @@ async def take_screenshot( post, comments ):
             # Take a screenshot of the specific comment
             target_comment = await page.query_selector( "shreddit-comment" )
             if target_comment:
-                screenshot_path = f'reddit_image_{i}.png'
+                screenshot_path = f'posts/{post.id}/images/reddit_image_{i}.png'
                 i += 1
                 await page.screenshot( path=screenshot_path, clip=await target_comment.bounding_box() )
                 print( f'Screenshot saved: { os.path.abspath( screenshot_path ) }' )

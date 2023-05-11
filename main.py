@@ -1,4 +1,4 @@
-import asyncio
+import os, asyncio
 from PIL import Image, ImageEnhance, ImageChops, ImageDraw
 from take_screenshot import take_screenshot
 from reddit import connect, get_post, get_comments
@@ -35,11 +35,21 @@ def change_transparency(image, transparency_ratio):
 
 reddit = connect()
 post = get_post( reddit )
+
+if not os.path.exists( "posts" ):
+    os.mkdir( "posts" )
+if not os.path.exists( "posts/" + post.id ):
+    os.mkdir( "posts/" + post.id )
+if not os.path.exists( "posts/" + post.id + "/images" ):
+    os.mkdir( "posts/" + post.id + "/images" )
+if not os.path.exists( "posts/" + post.id + "/audio" ):
+    os.mkdir( "posts/" + post.id + "/audio" )
+
 comments = get_comments( post )
 asyncio.run( take_screenshot( post, comments ) )
-for i in range(0, 6):
-    im = Image.open( f'reddit_image_{i}.png' )
+for i in range( 0, len( comments ) + 1):
+    im = Image.open( f'posts/{post.id}/images/reddit_image_{i}.png' )
     im = add_corners( im, 30 )
     im = change_transparency( im, 0.85 )
-    im.save( f'reddit_image_{i}.png' )
+    im.save( f'posts/{post.id}/images/reddit_image_{i}.png' )
 create_video( post, comments )
