@@ -27,10 +27,14 @@ Uploads the generated video to YouTube using the YouTube Data API.
 ## Installation
 
 Clone the repository:
-bash
-`git clone https://github.com/username/reddit-video-generator.git`
+
+```bash
+git clone https://github.com/username/reddit-video-generator.git
+```
 Install the required dependencies:
-`pip install -r requirements.txt`
+```pip
+pip install -r requirements.txt
+```
 Set up the necessary API credentials:
 Reddit API credentials: Obtain the client ID, client secret, and user agent by creating a Reddit developer application. Set these credentials in the config.env file.
 YouTube API credentials: Follow the instructions in the YouTube Data API documentation to create and obtain the necessary credentials. Place the client_secrets.json file in the project directory.
