@@ -1,11 +1,10 @@
 from dataclasses import dataclass
-import os, asyncio
+import os, asyncio, knapsack, shutil
 from take_screenshot import take_screenshot_post, take_screenshot_comment
 from reddit import connect, get_post, get_comments
 from create_video import create_video, generate_audio
 from database import video_exists, insert_video
 from moviepy.editor import AudioFileClip, ImageClip
-import knapsack
 from upload_video import get_authenticated_service, initialize_upload
 
 description = '''
@@ -32,7 +31,7 @@ Minecraft Parkour Video: https://www.youtube.com/watch?v=n_Dv4...
 '''
 
 def create_content_post( post ):
-    audio_clip = AudioFileClip( generate_audio( post.title + post.selftext, post.id, post.id ) )
+    audio_clip = AudioFileClip( generate_audio( post.title + " " + post.selftext, post.id, post.id ) )
     image_clip = ImageClip( asyncio.run( take_screenshot_post( post ) ) )
     return Content( post, image_clip, audio_clip )
 
@@ -41,9 +40,17 @@ def create_content_comment( post, comment ):
     image_clip = ImageClip( asyncio.run( take_screenshot_comment( post, comment ) ) )
     return Content( comment, image_clip, audio_clip )
 
+def remove_directories(directory):
+    for root, dirs, files in os.walk(directory, topdown=False):
+        for file in files:
+            os.remove(os.path.join(root, file))
+        for dir in dirs:
+            shutil.rmtree(os.path.join(root, dir))
+    os.rmdir(directory)
+
 
 reddit = connect()
-posts = get_post( reddit )
+posts, subreddit_name = get_post( reddit )
 
 @dataclass
 class Content:
@@ -70,7 +77,7 @@ for post in posts:
         
         if ( content_dict[post.id].audio.duration > 60 ):
             insert_video( post.id )
-            os.rmdir( "posts/" + post.id )
+            remove_directories( "posts/" + post.id )
             continue
         else:
             comments = get_comments( post )
@@ -97,5 +104,5 @@ for post in posts:
             insert_video( post.id )
             youtube = get_authenticated_service()
             file_path = os.path.join( "posts", post.id, "output_video.mp4" )
-            initialize_upload( youtube, file_path, "public", "r/AskWomen: " + post.title, "🔴 r/AskWomen: " + post.title + description )
+            initialize_upload( youtube, file_path, "public", subreddit_name + " " + post.title, "🔴 r/AskWomen: " + post.title + description )
             break

@@ -1,6 +1,5 @@
 
-import praw
-import os
+import praw, os, random
 from dotenv import load_dotenv
 
 def connect():
@@ -19,11 +18,14 @@ def connect():
 
 def get_post( reddit ):
 
-    # Get to the AskReddit subreddit
-    subreddit = reddit.subreddit( 'AskWomen' )
-    posts = subreddit.top( time_filter = 'day', limit = 10 )
+    subreddits = ['AskWomen', 'AskMen', 'AskReddit', 'AmItheAsshole' ]
+    subreddit_name = random.choice( subreddits )
 
-    return posts
+    # Get to the AskReddit subreddit
+    subreddit = reddit.subreddit( subreddit_name )
+    posts = subreddit.top( time_filter = 'week', limit = 15 )
+
+    return posts, "r/" + subreddit_name
 
 def get_comments(post):
 

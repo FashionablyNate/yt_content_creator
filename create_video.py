@@ -1,9 +1,8 @@
 # Import the necessary libraries
 from TTS.utils.manage import ModelManager
 from TTS.utils.synthesizer import Synthesizer
-import site
 from pydub import AudioSegment
-import os, random
+import os, random, site
 from moviepy.editor import VideoFileClip, ImageClip, AudioFileClip, CompositeVideoClip, concatenate_audioclips, concatenate_videoclips
 from moviepy.decorators import requires_duration
 from normalize import normalize_text
@@ -25,7 +24,7 @@ def text_to_mp3(text, output_file):
     outputs = synthesizer.tts(normalize_text(text))
     synthesizer.save_wav(outputs, output_file + ".wav")
     # Convert wav to mp3 and remove the wav file
-    AudioSegment.from_wav(output_file + ".wav").export(output_file + ".mp3", format='mp3')
+    AudioSegment.from_wav(output_file + ".wav").speedup(playback_speed=1.2).export(output_file + ".mp3", format='mp3')
     os.remove(output_file + ".wav")
 
 def generate_audio( text, id, post_id ):
