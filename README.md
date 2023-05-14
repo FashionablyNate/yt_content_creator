@@ -9,7 +9,8 @@ Generates audio from the post title and body using TTS synthesis.
 Takes screenshots of the post and comment threads using the Playwright library.
 Creates a video by combining the post audio, screenshots, and comment audio.
 Uploads the generated video to YouTube using the YouTube Data API.
-Requirements
+
+## Requirements
 
 - Python 3.7 or higher
 - Playwright
