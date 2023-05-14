@@ -28,11 +28,11 @@ Uploads the generated video to YouTube using the YouTube Data API.
 
 Clone the repository:
 
-```bash
+```sh
 git clone https://github.com/username/reddit-video-generator.git
 ```
 Install the required dependencies:
-```pip
+```sh
 pip install -r requirements.txt
 ```
 Set up the necessary API credentials:
@@ -42,7 +42,9 @@ YouTube API credentials: Follow the instructions in the YouTube Data API documen
 ## Usage
 
 Run the reddit_video_generator.py script:
-`python reddit_video_generator.py`
+```sh
+python reddit_video_generator.py
+```
 Select the subreddit from which you want to fetch posts.
 The script will fetch the top posts from the selected subreddit, generate audio from the post titles and bodies, take screenshots of the post and comment threads, create a video by combining the audio and screenshots, and upload the video to YouTube.
 The generated video will be uploaded to your YouTube channel with the specified title, description, and privacy settings.
