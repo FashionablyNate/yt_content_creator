@@ -1,4 +1,4 @@
-# Code Readme
+# YouTube Content Generator
 
 This code consists of several functions that are used to create videos from Reddit posts and their comments. The main workflow of the code is as follows:
 
