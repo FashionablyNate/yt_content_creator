@@ -29,7 +29,7 @@ Uploads the generated video to YouTube using the YouTube Data API.
 Clone the repository:
 
 ```sh
-git clone https://github.com/username/reddit-video-generator.git
+git clone https://github.com/FashionablyNate/yt_content_creator.git
 ```
 Install the required dependencies:
 ```sh
