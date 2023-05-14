@@ -43,7 +43,7 @@ YouTube API credentials: Follow the instructions in the YouTube Data API documen
 
 Run the reddit_video_generator.py script:
 ```sh
-python reddit_video_generator.py
+python main.py
 ```
 Select the subreddit from which you want to fetch posts.
 The script will fetch the top posts from the selected subreddit, generate audio from the post titles and bodies, take screenshots of the post and comment threads, create a video by combining the audio and screenshots, and upload the video to YouTube.
