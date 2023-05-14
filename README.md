@@ -41,7 +41,7 @@ YouTube API credentials: Follow the instructions in the YouTube Data API documen
 
 ## Usage
 
-Run the reddit_video_generator.py script:
+Run the main.py script:
 ```sh
 python main.py
 ```
