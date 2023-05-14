@@ -1,6 +1,7 @@
 import re
 from num2words import num2words
 from better_profanity import profanity
+import unicodedata
 
 def expand_contractions(text):
     contractions = {
@@ -126,6 +127,8 @@ def expand_contractions(text):
         "we're": "we are",
         "sex": "intercourse",
         "cum": "sauce",
+        "asshole": "anus",
+        "piss": "pee",
     }
     for contraction, expansion in contractions.items():
         text = text.replace(contraction, expansion)
@@ -149,10 +152,12 @@ def normalize_punctuation(text):
 
     # Remove space before punctuation marks
     text = re.sub(r'\s+([.,!?])', r'\1', text)
+    text = ''.join(c for c in text if not unicodedata.category(c).startswith('So'))
     return text
 
 def normalize_text(text):
     profanity.load_censor_words()
+    profanity.load_censor_words(whitelist_words=['pee', 'urine'])
     text = expand_contractions(text)
     text = normalize_numbers(text)
     text = profanity.censor( text, "" )

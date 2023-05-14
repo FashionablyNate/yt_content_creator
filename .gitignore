@@ -4,3 +4,6 @@ venv/
 *.mp3
 __pycache__/
 posts/
+client_secrets.json
+main.py-oauth2.json
+videos.db

@@ -21,9 +21,9 @@ def get_post( reddit ):
 
     # Get to the AskReddit subreddit
     subreddit = reddit.subreddit( 'AskWomen' )
-    posts = subreddit.top( time_filter = 'week', limit = 1 )
+    posts = subreddit.top( time_filter = 'day', limit = 10 )
 
-    return next(posts)
+    return posts
 
 def get_comments(post):
 
@@ -32,9 +32,9 @@ def get_comments(post):
     post.comments.replace_more(limit=0)
 
     # Filter comments with length <= 1000 characters
-    filtered_comments = [comment for comment in post.comments.list()]
+    filtered_comments = [comment for comment in post.comments.list() if len(comment.body) <= 1100]
 
     # Get the top 10 comments
-    top_comments = filtered_comments[:10]
+    top_comments = filtered_comments[:20]
 
     return top_comments
